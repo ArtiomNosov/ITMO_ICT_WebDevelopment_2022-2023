@@ -1,16 +1,21 @@
 import socket
 import threading
+# как хранятся студенты?
+# делаете threading на сервере? Да, каждое следующее сообщение обрабатывается в thread
 
 # Функция обработки соединений с клиентами
-def connection(sockets):
+def connection(sockets, addrs, niknames):
     while True:
         # Принимаем соединение от клиента и добавляем его сокет в список
         clsocket, addr = s.accept()
         sockets.append(clsocket)
+        addrs.append(addr)
+        msg = clsocket.recv(1000)
+        niknames.append(msg.decode())
         print('Подключился клиент', addr)
 
 # Функция для получения сообщений от одного клиента и отправки их всем остальным клиентам
-def get(sock, sockets):
+def get(sock, addrs, sockets, niknames):
     while True:
         try:
             msg = sock.recv(1000)
@@ -23,18 +28,19 @@ def get(sock, sockets):
         # Пересылаем сообщение от одного клиента всем остальным клиентам
         for soc in sockets:
             if soc != sock:
-                soc.send(msg)
+                string_1 = niknames[sockets.index(sock)] + ': ' +msg.decode()
+                soc.send(bytes(string_1, 'utf-8'))
                 print(f"Переслали сообщение {msg} пользователю {soc}")
 
 # Функция для создания отдельных потоков для каждого клиента
-def make_threads(sockets, threads):
+def make_threads(sockets, addrs, threads):
     while True:
         for soc in sockets:
             if soc in threads:
                 continue
             print(f"Ого мы создаём поток! для {soc}")
             # Создаем новый поток для клиента и передаем ему соответствующий сокет
-            t = threading.Thread(target=get, args=(soc, sockets))
+            t = threading.Thread(target=get, args=(soc, addrs, sockets, niknames))
             t.start()
             threads.append(soc)
 
@@ -49,14 +55,16 @@ s.listen(10)
 
 # Создаем список для хранения клиентских сокетов и список для хранения потоков
 sockets = []
+addrs = []
+niknames = []
 threads = []
 
 # Создаем поток для обработки новых соединений
-t1 = threading.Thread(target=connection, args=(sockets,))
+t1 = threading.Thread(target=connection, args=(sockets, addrs, niknames, ))
 t1.start()
 
 # Создаем поток для создания потоков для каждого клиента
-t2 = threading.Thread(target=make_threads, args=(sockets, threads,))
+t2 = threading.Thread(target=make_threads, args=(sockets, addrs, threads,))
 t2.start()
 
 # Ожидаем завершения потока t2

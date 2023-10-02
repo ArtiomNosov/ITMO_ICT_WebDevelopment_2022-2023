@@ -1,13 +1,14 @@
 import socket
 MAX_LINE = 128 * 512
 MAX_HEADERS = 200
-class HTTServer:
+class HTTPServer:
     def __init__(self, host, port, server_name):
         self._host = host
         self._port = port
         self._server_name = server_name
         # Словарь для хранения оценок по дисциплинам
         self._discipline = {}
+        self.grade_id = 0
     def serve_forever(self):
         # Создание сокета для сервера
         serv_socket = socket.socket(
@@ -86,7 +87,11 @@ class HTTServer:
         if parameters['discipline'] not in self._discipline.keys():
             self._discipline[parameters['discipline']] = {}
 
-        self._discipline[parameters['discipline']][parameters['name']] = parameters['grade']
+        if parameters['name'] not in self._discipline[parameters['discipline']].keys():
+            self._discipline[parameters['discipline']][parameters['name']] = {}
+
+        self._discipline[parameters['discipline']][parameters['name']][self.grade_id] = parameters['grade']
+        self.grade_id += 1
 
         print(self._discipline)
 
@@ -99,7 +104,8 @@ class HTTServer:
         body += f'<div>Дисциплинa ({parameters["discipline"]})</div>'
         body += '<ul>'
         for u in self._discipline[parameters["discipline"]].keys():
-            body += f'<li>* {u} {self._discipline[parameters["discipline"]][u]}</li>'
+            for id in self._discipline[parameters["discipline"]][u].keys():
+                body += f'<li> {u} {self._discipline[parameters["discipline"]][u][id]}</li>'
         body += '</ul>'
         body += '</body></html>'
 
@@ -128,7 +134,7 @@ class HTTServer:
 
 # Определение хоста, порта и имени сервера
 host = socket.gethostname()
-port = 8080
+port = 8000
 name = 'server'
 # Создание сервера и запуск его бесконечного цикла обслуживания клиентов
 serv = HTTPServer(host, port, name)

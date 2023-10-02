@@ -19,6 +19,11 @@ s.connect((socket.gethostname(), 1010))
 get = threading.Thread(target=get_msg, args=(s,))
 # Запускаем поток для приема сообщений от сервера
 get.start()
+
+print('Введите никнейм:\n')
+nik = input()
+s.send(bytes(nik, 'utf-8'))
+
 # Запускаем бесконечный цикл для отправки сообщений серверу
 while True:
     # Запрашиваем сообщение для отправки у пользователя
